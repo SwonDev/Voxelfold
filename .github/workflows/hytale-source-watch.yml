@@ -1,0 +1,24 @@
+name: Vigilar Hytale Shared Source
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 */6 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  compatibility-revision:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar Voxelfold
+        uses: actions/checkout@v7
+
+      - name: Comparar con la revisión compatible
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.HYTALE_SHARED_SOURCE_TOKEN }}
+        run: |
+          revision="$(gh api repos/SwonDev/hytale-shared-source/git/ref/heads/pre-release --jq .object.sha)"
+          node scripts/check-hytale-source.mjs --remote-revision="$revision"

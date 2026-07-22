@@ -1,0 +1,48 @@
+{
+  "Rock_Stone": {
+    "TranslationProperties": { "Name": "server.items.Rock_Stone.name" },
+    "Icon": "Icons/ItemsGenerated/Rock_Stone.png",
+    "Categories": ["Blocks.Rocks"],
+    "Set": "Rock_Stone",
+    "BlockType": {
+      "Material": "Solid",
+      "DrawType": "Cube",
+      "Group": "Stone",
+      "Textures": [
+        { "All": "BlockTextures/Rock_Stone.png", "Weight": 2 },
+        { "All": "BlockTextures/Rock_Stone_2.png", "Weight": 1 }
+      ],
+      "TextureComputedColor": "#79785A"
+    }
+  },
+  "Wood_Fir_Trunk": {
+    "TranslationProperties": { "Name": "server.items.Wood_Fir_Trunk.name" },
+    "Icon": "Icons/ItemsGenerated/Wood_Fir_Trunk.png",
+    "Categories": ["Blocks.Wood"],
+    "Set": "Wood_Fir_Trunk",
+    "BlockType": {
+      "Material": "Solid",
+      "DrawType": "Cube",
+      "Group": "Wood",
+      "Textures": [
+        { "Top": "BlockTextures/Wood_Fir_Trunk_Top.png", "Side": "BlockTextures/Wood_Fir_Trunk.png", "Weight": 1 }
+      ],
+      "TextureComputedColor": "#6B5A3E"
+    }
+  },
+  "Wood_Darkwood_Stairs": {
+    "TranslationProperties": { "Name": "server.items.Wood_Darkwood_Stairs.name" },
+    "Icon": "Icons/ItemsGenerated/Wood_Darkwood_Stairs.png",
+    "Categories": ["Blocks.Wood"],
+    "Set": "Wood_Darkwood_Stairs",
+    "BlockType": {
+      "Material": "Solid",
+      "DrawType": "Stairs",
+      "Group": "Wood",
+      "Textures": [
+        { "All": "BlockTextures/Wood_Darkwood_Planks.png", "Weight": 1 }
+      ],
+      "TextureComputedColor": "#3A2E22"
+    }
+  }
+}

@@ -1,0 +1,37 @@
+name: Compatibilidad con Hytale
+description: Informa de un bloque, modelo o actualización que Voxelfold no interpreta correctamente.
+title: "[Compatibilidad] "
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Versión de Voxelfold
+    validations:
+      required: true
+  - type: input
+    id: revision
+    attributes:
+      label: Canal o revisión de Hytale
+      description: No incluyas enlaces ni identificadores que revelen repositorios privados.
+    validations:
+      required: true
+  - type: input
+    id: identifier
+    attributes:
+      label: Identificador técnico del bloque o modelo
+    validations:
+      required: true
+  - type: textarea
+    id: issue
+    attributes:
+      label: Diferencia observada
+      description: Describe geometría, orientación, textura, transparencia o animación incorrecta sin adjuntar el recurso original.
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Publicación segura
+      options:
+        - label: No he adjuntado archivos ni recursos extraídos de Hytale.
+          required: true

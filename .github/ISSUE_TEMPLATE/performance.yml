@@ -1,0 +1,37 @@
+name: Rendimiento 3D
+description: Informa de tirones, baja fluidez o consumo anómalo.
+title: "[Rendimiento] "
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Versión de Voxelfold
+    validations:
+      required: true
+  - type: input
+    id: hardware
+    attributes:
+      label: Mac y GPU
+    validations:
+      required: true
+  - type: textarea
+    id: scene
+    attributes:
+      label: Escena y operación
+      description: Indica número aproximado de bloques, entorno, AO y acción que provoca el problema.
+    validations:
+      required: true
+  - type: textarea
+    id: metrics
+    attributes:
+      label: Métricas de Voxelfold
+      description: Copia FPS, draw calls, triángulos, DPR y horneado del panel Rendimiento.
+    validations:
+      required: true
+  - type: textarea
+    id: pattern
+    attributes:
+      label: Patrón del problema
+      description: Indica si es constante, periódico o aparece tras editar o mover la cámara.
+    validations:
+      required: true

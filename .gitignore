@@ -1,0 +1,64 @@
+# Dependencias
+node_modules/
+.pnpm-store/
+
+# Builds del frontend
+dist/
+dist-ssr/
+build/
+
+# Rust / Tauri
+src-tauri/target/
+src-tauri/gen/
+
+# Credenciales locales de firma (las públicas se copian explícitamente a la configuración)
+release-private/
+updater.key
+
+# Capturas efímeras del navegador de pruebas
+.playwright-mcp/
+.local-artifacts/
+
+# Capturas y volcados de validación local (no forman parte del producto)
+/env_*.png
+/ui-*.png
+/v2-*.png
+/voxelfold-guide-precision.png
+/blockbench-snapshot.md
+
+# === LEGAL: jamás versionar assets de Hytale ===
+# Caché de texturas/iconos extraídos de la instalación local del usuario
+/cache/
+**/.hytale-cache/
+*.hytale-cache
+# VoxelModels y datos derivados de prefabs (caché local)
+/appdata/
+*.voxelmodel
+
+# Entorno
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# SO / editores
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+
+# Assets reales de Hytale extraídos para pruebas locales (NO redistribuir)
+public/hytale/
+public/realbuild/
+# Hytale Shared Source (licencia de socio/NDA — §11 prohíbe redistribuir, §12 prohíbe
+# publicar en cualquier repo o ubicación accesible). SOLO referencia local, jamás versionar.
+assets/hytale-shared-source*
+**/hytale-shared-source-pre-release/

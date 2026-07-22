@@ -1,0 +1,353 @@
+@import "tailwindcss";
+
+/* Fuentes REALES de Hytale (Nunito Sans, Lexend, Noto Mono — todas SIL OFL). */
+@font-face {
+  font-family: "Nunito Sans";
+  src: url("/fonts/NunitoSans-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Nunito Sans";
+  src: url("/fonts/NunitoSans-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Nunito Sans";
+  src: url("/fonts/NunitoSans-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Nunito Sans";
+  src: url("/fonts/NunitoSans-ExtraBold.ttf") format("truetype");
+  font-weight: 800;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Lexend";
+  src: url("/fonts/Lexend-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Hytale Mono";
+  src: url("/fonts/NotoMono-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-display: swap;
+}
+
+/* Tema Voxelfold "Hytale-like" — ver DESIGN.md (precedencia absoluta). */
+@theme {
+  /* Paleta azul oscura de Hytale (ver UI real del juego). */
+  --color-bg: #0f1822;
+  --color-surface: #16212d;
+  --color-surface-2: #1b2836;
+  --color-elevated: #26384a;
+  --color-line: #3a4d62;
+  --color-ink: #e9eff6;
+  --color-muted: #9fb1c4;
+  --color-accent: #5a7da8;
+  --color-accent-hi: #82a6d4; /* subido para cumplir contraste AA sobre fondos elevados */
+  --color-accent-ink: #0b1119;
+  --color-gold: #e0a64b;
+  --color-danger: #d4674e; /* terracota más claro: AA sobre bg/surface */
+  --color-danger-text: #e58a72; /* danger como TEXTO sobre fondos claros (surface-2/elevated): AA 4.5+ */
+
+  --font-display: "Lexend", "Nunito Sans", system-ui, sans-serif;
+  --font-sans: "Nunito Sans", system-ui, -apple-system, sans-serif;
+
+  --radius: 0.625rem;
+}
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  * {
+    border-color: var(--color-line);
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: 0;
+  }
+
+  code {
+    font-family: "Hytale Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.85em;
+  }
+
+  /* Scrollbar cálida */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-line);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+/* ============================================================
+   Piel NATIVA de Hytale — usa los assets reales del juego
+   servidos por el custom protocol (BYO local, no redistribuido).
+   Si Hytale no está disponible, los fallbacks CSS mantienen la UI usable.
+   ============================================================ */
+@layer components {
+  /* --- Botones reales de Hytale (background estirado) --- */
+  .hy-btn {
+    background-color: transparent;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 100% 100%;
+    border: 1px solid transparent; /* fallback */
+    color: #f4ecda;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 40px;
+    padding: 0 1.15rem;
+    cursor: pointer;
+    transition: filter 0.1s ease;
+  }
+  .hy-btn:disabled {
+    opacity: 0.55;
+    cursor: default;
+  }
+  .hy-btn-lg {
+    min-height: 48px;
+    padding: 0 1.5rem;
+    font-size: 1.0625rem;
+  }
+
+  /* Las imágenes nine-patch se inyectan en runtime como variables CSS (ver lib/hyChrome.ts),
+     resueltas vía uiAsset(): en Tauri → voxelfold-asset://, en dev/test → /hytale/. Así la UI
+     nativa se ve igual en la app real y en el navegador de verificación. Fallback: el background-color. */
+  .hy-btn-primary {
+    background-image: var(--hy-img-btn-primary);
+    background-color: #3d6592; /* fallback azul Hytale (contraste AA con el texto claro) */
+    border-radius: 8px;
+  }
+  .hy-btn-primary:hover:not(:disabled) {
+    background-image: var(--hy-img-btn-primary-hover);
+  }
+  .hy-btn-primary:active:not(:disabled) {
+    background-image: var(--hy-img-btn-primary-active);
+  }
+
+  .hy-btn-secondary {
+    background-image: var(--hy-img-btn-secondary);
+    background-color: #2c2218;
+    border-radius: 8px;
+  }
+  .hy-btn-secondary:hover:not(:disabled) {
+    background-image: var(--hy-img-btn-secondary-hover);
+  }
+  .hy-btn-secondary:active:not(:disabled) {
+    background-image: var(--hy-img-btn-secondary-active);
+  }
+
+  .hy-btn-tertiary {
+    background-image: var(--hy-img-btn-tertiary);
+    background-color: transparent;
+    border-radius: 8px;
+  }
+  .hy-btn-tertiary:hover:not(:disabled) {
+    background-image: var(--hy-img-btn-tertiary-hover);
+  }
+
+  .hy-btn-destructive {
+    background-image: var(--hy-img-btn-destructive);
+    background-color: #8a3a2a;
+    border-radius: 8px;
+  }
+  .hy-btn-destructive:hover:not(:disabled) {
+    background-image: var(--hy-img-btn-destructive-hover);
+  }
+
+  /* --- Panel/contenedor real de Hytale (nine-patch) --- */
+  /* Panel REAL de Hytale (ContainerFullPatch) como nine-patch. Clave: un fondo
+     azul sólido (el mismo del panel del juego) detrás, para que las esquinas
+     biseladas/transparentes del asset muestren ese azul y no el fondo de la app. */
+  .hy-panel {
+    border-style: solid;
+    border-width: 18px;
+    border-image-source: var(--hy-img-panel);
+    border-image-slice: 40 fill;
+    border-image-repeat: stretch;
+    /* sin fondo sólido: las esquinas biseladas del asset muestran el fondo azul de la app */
+    background-color: transparent;
+    color: var(--color-ink);
+  }
+
+  /* --- Fondos con textura REAL de Hytale (tileada + overlay para legibilidad) --- */
+  .hy-app-bg {
+    background: radial-gradient(120% 90% at 50% -10%, #1c2a39 0%, #101a25 55%, #0c141d 100%);
+  }
+  .hy-sidebar {
+    background-color: #121d28;
+    border-right: 1px solid #2a3a4b;
+  }
+
+  /* --- Cabecera de panel real de Hytale (ContainerHeader, nine-patch horizontal) ---
+     1428x76 @2x: runas en los extremos + centro azul liso. Escala uniforme ~0.53x
+     (slice 38/168 -> border 20/88) para no deformar las runas. El título se
+     superpone en absoluto porque los bordes ocupan toda la altura. */
+  .hy-header {
+    /* El arte ContainerHeader tiene el borde ORNAMENTADO arriba pero PLANO abajo (es un
+       banner de cabecera). Para un marco COMPLETO y simétrico se dibujan DOS capas con el
+       mismo arte: ::before normal (borde superior + runas) y ::after volteado verticalmente
+       (su borde superior cae abajo → borde inferior ornamentado, espejo del de arriba). */
+    position: relative;
+    height: 42px;
+  }
+  .hy-header::before,
+  .hy-header::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-style: solid;
+    border-width: 16px 88px;
+    border-image-source: var(--hy-img-header);
+    border-image-slice: 30 168 fill;
+    border-image-repeat: stretch;
+    pointer-events: none;
+  }
+  .hy-header::after {
+    /* espejo vertical → borde inferior ornamentado; recortado para aportar solo el borde
+       de abajo (no doblar las runas centrales). */
+    transform: scaleY(-1);
+    clip-path: inset(55% 0 0 0);
+  }
+  .hy-header-title {
+    /* Caja CENTRADA del tamaño NATURAL del texto (width:max-content) con inset:0+margin:auto.
+       Así la caja nunca es más estrecha que el texto → es IMPOSIBLE que las letras se
+       compriman (el bug de WebKit con left/right negativos). Si el título es más ancho que el
+       banner, puede invadir un poco las runas (max-width) y, en el peor caso, recortarse. */
+    position: absolute;
+    inset: 0;
+    /* Ancho = natural del texto (centrado con margin:auto) → no se comprime. La ALTURA se
+       deja completa (la del banner): nada de height:max-content, que recortaba las letras
+       por arriba/abajo. overflow-x oculta títulos larguísimos sin tocar el alto. */
+    width: max-content;
+    max-width: calc(100% + 150px);
+    margin-inline: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    line-height: 1.2;
+    letter-spacing: 0.01em;
+    color: var(--color-ink);
+    pointer-events: none;
+    /* El título debe ir POR ENCIMA de las capas del marco (::after se pinta después y, si
+       no, tapaba la parte inferior de las letras). */
+    z-index: 1;
+  }
+
+  /* --- Tooltip real de Hytale (TooltipDefaultBackground, 107x107 redondeado) --- */
+  .hy-tooltip {
+    border-style: solid;
+    border-width: 16px;
+    border-image-source: var(--hy-img-tooltip);
+    border-image-slice: 32 fill;
+    border-image-repeat: stretch;
+    color: var(--color-ink);
+  }
+
+  /* --- Separador de sección real de Hytale --- */
+  .hy-separator {
+    height: 9px;
+    border: 0;
+    background-image: var(--hy-img-separator);
+    background-repeat: repeat-x;
+    background-size: auto 100%;
+    opacity: 0.8;
+  }
+
+  /* --- Slot de inventario real de Hytale (paleta de bloques del editor) --- */
+  .hy-slot {
+    background-image: var(--hy-img-slot);
+    background-color: #16212d; /* fallback si el asset no carga */
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 100% 100%;
+  }
+
+  /* --- Esqueleto de carga (shimmer) --- */
+  .hy-skeleton {
+    background-image: linear-gradient(
+      90deg,
+      var(--color-surface-2) 25%,
+      var(--color-elevated) 37%,
+      var(--color-surface-2) 63%
+    );
+    background-size: 200% 100%;
+    animation: hy-shimmer 1.4s ease-in-out infinite;
+  }
+  @keyframes hy-shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+
+  /* --- Entrada suave de contenido al montar --- */
+  .hy-fade-in {
+    animation: hy-fade-in 0.24s ease-out both;
+  }
+  @keyframes hy-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+/* Accesibilidad: respetar la preferencia de movimiento reducido. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

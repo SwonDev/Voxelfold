@@ -1,0 +1,17 @@
+{
+  "version": 8,
+  "blockIdVersion": 11,
+  "anchorX": 0,
+  "anchorY": 0,
+  "anchorZ": 0,
+  "blocks": [
+    { "x": 0, "y": 0, "z": 0, "name": "Rock_Stone" },
+    { "x": 1, "y": 0, "z": 0, "name": "Rock_Stone" },
+    { "x": 0, "y": 0, "z": 1, "name": "Rock_Stone" },
+    { "x": 1, "y": 0, "z": 1, "name": "Rock_Stone" },
+    { "x": 0, "y": 1, "z": 0, "name": "Wood_Fir_Trunk" },
+    { "x": 1, "y": 1, "z": 0, "name": "Wood_Fir_Trunk" },
+    { "x": 0, "y": 1, "z": 1, "name": "Empty" },
+    { "x": 1, "y": 1, "z": 1, "name": "Wood_Darkwood_Stairs", "rotation": 2 }
+  ]
+}

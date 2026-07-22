@@ -1,0 +1,47 @@
+name: Error de Voxelfold
+description: Informa de un fallo reproducible en la aplicación.
+title: "[Error] "
+body:
+  - type: markdown
+    attributes:
+      value: No adjuntes recursos de Hytale, credenciales, rutas personales ni datos privados.
+  - type: input
+    id: version
+    attributes:
+      label: Versión de Voxelfold
+      placeholder: 0.2.0
+    validations:
+      required: true
+  - type: input
+    id: system
+    attributes:
+      label: Sistema y hardware
+      placeholder: macOS, modelo de Mac y GPU
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Pasos para reproducirlo
+      description: Escribe una secuencia mínima y exacta.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Resultado esperado
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Resultado observado
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Comprobación de privacidad
+      options:
+        - label: He eliminado secretos, datos personales y recursos restringidos.
+          required: true

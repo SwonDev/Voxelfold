@@ -1,0 +1,6 @@
+# Fixture sintético de server.lang (formato real de Hytale: clave = valor)
+# Replica el formato de Server/Languages/en-US/server.lang para tests del parser de nombres.
+
+items.Rock_Stone.name = Stone
+items.Wood_Fir_Trunk.name = Fir Wood Trunk
+items.Wood_Darkwood_Stairs.name = Darkwood Stairs
