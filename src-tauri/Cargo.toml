@@ -24,11 +24,11 @@ tauri-plugin-updater = "2.10.1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 # Core de Voxelfold:
-zip = "2"          # lectura por entrada del Assets.zip de Hytale (sin extraer 3.2 GB)
+zip = "2"          # lectura por entrada del Assets.zip de Hytale (sin extraer 3.4 GB)
 thiserror = "2"    # tipos de error del Core
 rusqlite = { version = "0.32", features = ["bundled", "serde_json"] }  # SQLite incrustado
 rusqlite_migration = "1.3"  # migraciones versionadas
 urlencoding = "2"  # decodificar rutas del custom protocol voxelfold-asset://
-ureq = "2"         # cliente HTTP (búsqueda de prefabs públicos de la comunidad, sin servidor propio)
+ureq = "3"         # cliente HTTP (búsqueda de prefabs públicos de la comunidad, sin servidor propio)
 keyring = "4.1.5"  # secretos del usuario en Keychain/Credential Manager/Secret Service
 url = "2"          # validación estricta de URLs remotas antes de descargar
