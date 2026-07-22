@@ -18,6 +18,43 @@ placeholders artificiales.
 - Puertas ya superadas: TypeScript, Vite, Rust tests, Clippy sin avisos, CSP, permisos mínimos de
   Tauri, `npm audit` sin vulnerabilidades y `DESIGN.md` sin hallazgos.
 
+## Revisión UI/UX del editor y superficies 3D
+
+La revisión visual posterior detectó una regresión de jerarquía que no aparecía en la auditoría
+estática inicial: el lienzo acumulaba el rail completo de once herramientas, coordenadas, vistas,
+medidas, entorno, AO, diagnóstico y una ayuda de ratón permanente. Cada control era válido por
+separado, pero juntos ocultaban la construcción y reducían el área útil.
+
+### Hallazgos resueltos
+
+- **Alta — Chrome 3D permanente:** editor y visor agrupaban cámara, entorno y calidad en filas
+  siempre visibles. Se sustituyeron por un único popover «Vista», accesible con teclado y Escape.
+- **Alta — Rail sobredimensionado:** once botones y sus atajos ocupaban casi toda la altura. El rail
+  mantiene las herramientas 1–5 en orden y abre formas/selección bajo demanda, sin perder atajos.
+- **Alta — Operaciones masivas:** una caja de 161 × 161 × 64 podía generar más de 1,6 millones de
+  celdas en el hilo de interfaz. La previsualización se limita y las operaciones de más de 100.000
+  celdas se rechazan con una explicación recuperable.
+- **Media — Diagnóstico persistente:** una prueba dejaba el HUD de FPS activo mediante
+  `localStorage`. Ahora es efímero, empieza apagado y no contamina futuras sesiones.
+- **Media — Brocha par:** un diámetro 2 o 4 producía una brocha menor. Los diámetros pares se
+  normalizan al siguiente impar y la interfaz lo comunica.
+- **Media — Revolve ×2:** la segunda copia quedaba a 90°; ahora las dos copias se enfrentan a 180°.
+- **Media — Flujo de opciones:** al elegir línea, caja, relleno, brocha, selección o pegado, el panel
+  lateral abre automáticamente «Escena» para mostrar sus parámetros.
+- **Media — Ventanas estrechas:** cabeceras y márgenes se adaptan por estructura; editor y guía
+  compactan la navegación global al entrar y permiten expandirla de nuevo con Ctrl/⌘+B.
+
+### Validación nativa posterior
+
+- Aplicación Tauri 0.2.0 compilada con firma Apple Development, instalada en
+  `/Applications/Voxelfold.app` y probada como aplicación macOS, no en navegador.
+- Construcción real de 2.789 bloques: 60 FPS, 238 draw calls, DPR 1,5 y horneado de 31 ms fuera del
+  hilo durante la muestra nativa, con AO, bloom, sombras y animación activos.
+- Verificados visualmente Biblioteca, detalle/visor, Editor 3D, Bloques, Comunidad, Importar y
+  Ajustes; sin solapes en el ancho mínimo de ventana ni pérdida de foco al cerrar popovers.
+- La suite frontend pasó de 17 a 25 pruebas e incorpora geometría de línea/caja/relleno/brocha y
+  transformaciones de selección, rotación, espejo, revolve y stack.
+
 ## Hallazgos
 
 ### Alta — El canal público de releases aún no existe

@@ -7,7 +7,7 @@ import {
   mirrorRotationX,
   mirrorRotationZ,
   rotateRotationY,
-} from "@/lib/hytaleRotation";
+} from "./hytaleRotation.ts";
 
 export interface ClipVox {
   x: number;
@@ -91,17 +91,19 @@ export function mirrorClipboardZ(clip: Clipboard): Clipboard {
 
 /**
  * Revolve (array radial): coloca `count` copias del portapapeles rotadas 90°·k alrededor
- * del punto `at` (centro), en coordenadas absolutas. count=1 → solo la copia base; 4 →
- * cuatro copias en cruz (torres/estructuras circulares, como el Revolve Tool de Hytale).
+ * del punto `at` (centro), en coordenadas absolutas. Admite 1, 2 o 4 copias: con 2 quedan
+ * enfrentadas a 180° y con 4 forman una cruz, como el Revolve Tool de Hytale.
  */
 export function revolveCells(clip: Clipboard, at: { x: number; y: number; z: number }, count: number): ClipVox[] {
   const out: ClipVox[] = [];
   const base = clip.cells.map((c) => ({ ...c, x: at.x + c.x, y: at.y + c.y, z: at.z + c.z }));
-  const n = Math.max(1, Math.floor(count));
+  const requested = Math.max(1, Math.floor(count));
+  const n = requested >= 4 ? 4 : requested >= 2 ? 2 : 1;
   for (let k = 0; k < n; k++) {
     for (const c of base) {
       let x = c.x, z = c.z, rot = c.rotation;
-      for (let i = 0; i < k; i++) {
+      const quarterTurns = (4 / n) * k;
+      for (let i = 0; i < quarterTurns; i++) {
         const nx = at.x + (z - at.z);
         const nz = at.z - (x - at.x);
         x = nx; z = nz;

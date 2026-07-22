@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -67,14 +67,26 @@ function NavItem({
 }
 
 export function AppShell() {
+  const location = useLocation();
   const ready = useQuery({ queryKey: ["hytale_ready"], queryFn: api.hytaleReady });
   const [skipped, setSkipped] = useState(false);
-  const [collapsed, setCollapsed] = useState(
+  const [preferredCollapsed, setPreferredCollapsed] = useState(
     () => localStorage.getItem("vf_sidebar_collapsed") === "true",
   );
+  const [focusExpanded, setFocusExpanded] = useState(false);
+  const focusMode = /\/(editor|guide)$/.test(location.pathname);
+  const collapsed = focusMode ? !focusExpanded : preferredCollapsed;
+
+  // Editor y guía son superficies de concentración: ganan lienzo al entrar, pero el usuario
+  // puede expandir la navegación durante esa visita con el mismo botón o Ctrl/⌘+B.
+  useEffect(() => setFocusExpanded(false), [location.pathname]);
 
   const toggle = useCallback(() => {
-    setCollapsed((c) => {
+    if (focusMode) {
+      setFocusExpanded((expanded) => !expanded);
+      return;
+    }
+    setPreferredCollapsed((c) => {
       const next = !c;
       try {
         localStorage.setItem("vf_sidebar_collapsed", String(next));
@@ -83,7 +95,7 @@ export function AppShell() {
       }
       return next;
     });
-  }, []);
+  }, [focusMode]);
 
   // Atajo estándar de escritorio (VS Code/Linear): Ctrl/⌘+B colapsa la barra lateral.
   // Se ignora si el foco está en un campo de texto (no robar la pulsación al usuario).

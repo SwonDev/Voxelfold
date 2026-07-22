@@ -64,7 +64,7 @@ export function Blocks() {
   }, [selected]);
 
   return (
-    <div className="mx-auto flex h-full w-full max-w-[1600px] flex-col px-8 py-8">
+    <div className="mx-auto flex h-full w-full max-w-[1600px] flex-col px-4 py-5 sm:px-6 sm:py-6 xl:px-8 xl:py-8">
       <PageHeader
         title="Bloques de Hytale"
         subtitle={

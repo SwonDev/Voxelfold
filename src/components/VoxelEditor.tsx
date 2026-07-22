@@ -14,7 +14,6 @@ import {
 import { EffectComposer, N8AO, Bloom } from "@react-three/postprocessing";
 import * as THREE from "three";
 import { type BlockInfo } from "@/lib/api";
-import { cn } from "@/lib/utils";
 import { useCubeTextures } from "@/lib/useCubeTextures";
 import { cubeMaterial } from "@/lib/cubeMaterial";
 import { useBlockModel } from "@/lib/useBlockModel";
@@ -38,6 +37,8 @@ import { useVoxelRenderBake } from "@/lib/useVoxelRenderBake";
 import type { BakeGroup } from "@/lib/voxelBakeProtocol";
 import { VoxelInstances } from "@/components/VoxelInstances";
 import { RenderStats, ShadowScheduler } from "@/components/RenderPerformance";
+import { SceneViewPopover, SceneViewToggle } from "@/components/SceneViewPopover";
+import { toast } from "@/lib/toast";
 
 export interface EditorVoxel {
   x: number;
@@ -79,6 +80,8 @@ export interface OpOptions {
 }
 
 const WORLD_LIMIT = 80; // límite de coordenadas para evitar colocaciones absurdas
+const PREVIEW_CELL_LIMIT = 4097;
+const EDIT_CELL_LIMIT = 100_000;
 const DIM_COLOR = new THREE.Color("#58646f");
 
 // Material INVISIBLE para los "pickers" instanciados del editor: no se ven (la malla
@@ -592,17 +595,26 @@ function DragController({
       if (!raycaster.ray.intersectPlane(plane, pt)) return null;
       return { x: Math.round(pt.x), y: groundY, z: Math.round(pt.z) };
     };
-    const compute = (a: Cell, b: Cell): Cell[] => {
-      if (tool === "select") return rectCells(a, b, true, 1); // huella para previsualizar
+    const compute = (a: Cell, b: Cell, limit = PREVIEW_CELL_LIMIT): Cell[] => {
+      const clampAxis = (value: number) => Math.max(-WORLD_LIMIT, Math.min(WORLD_LIMIT, value));
+      const from = { x: clampAxis(a.x), y: clampAxis(a.y), z: clampAxis(a.z) };
+      const to = { x: clampAxis(b.x), y: clampAxis(b.y), z: clampAxis(b.z) };
+      const height = Math.max(1, Math.min(ops.height, WORLD_LIMIT - from.y + 1));
+      if (tool === "select") return rectCells(from, to, true, 1, false, limit); // huella para previsualizar
       if (tool === "line") {
-        const base = lineCells(a, b);
-        if (ops.height <= 1) return base;
+        const base = lineCells(from, to);
+        if (height <= 1) return base.slice(0, limit);
         const out: Cell[] = []; // línea con altura = muro
-        for (let dy = 0; dy < ops.height; dy++) for (const c of base) out.push({ x: c.x, y: c.y + dy, z: c.z });
+        for (let dy = 0; dy < height; dy++) {
+          for (const c of base) {
+            out.push({ x: c.x, y: c.y + dy, z: c.z });
+            if (out.length >= limit) return out;
+          }
+        }
         return out;
       }
-      if (tool === "rect") return rectCells(a, b, ops.rectFilled, ops.height, ops.rectHollow);
-      return [...accum.current.values()]; // paint (a mano alzada)
+      if (tool === "rect") return rectCells(from, to, ops.rectFilled, height, ops.rectHollow, limit);
+      return [...accum.current.values()].slice(0, limit); // paint (a mano alzada)
     };
     const kindOf = (e: PointerEvent) => (tool === "select" ? "select" : e.shiftKey ? "erase" : "place");
     const onDown = (e: PointerEvent) => {
@@ -648,9 +660,16 @@ function DragController({
       }
       if (tool === "paint") accum.current.set(`${c.x},${c.z}`, c);
       // Recorta al límite del mundo: línea/caja/mano alzada pueden extenderse fuera de ±WORLD_LIMIT.
-      const cells = compute(a, c).filter(
+      const cells = compute(a, c, EDIT_CELL_LIMIT + 1).filter(
         (p) => Math.abs(p.x) <= WORLD_LIMIT && Math.abs(p.y) <= WORLD_LIMIT && Math.abs(p.z) <= WORLD_LIMIT,
       );
+      if (cells.length > EDIT_CELL_LIMIT) {
+        toast(
+          `La operación supera ${EDIT_CELL_LIMIT.toLocaleString("es")} celdas. Reduce el área o la altura para mantener el editor fluido.`,
+          "error",
+        );
+        return;
+      }
       if (cells.length) onPaint?.(cells, e.shiftKey);
     };
     el.addEventListener("pointerdown", onDown);
@@ -841,14 +860,16 @@ export function VoxelEditor({
   );
   const [ao, setAo] = useState(true);
   const [measure, setMeasure] = useState(false);
+  const [showGrid, setShowGrid] = useState(true);
+  const [showGizmo, setShowGizmo] = useState(true);
   const maxDpr = useMemo(
     () => Math.min(2, Math.max(1, typeof window === "undefined" ? 1 : window.devicePixelRatio || 1)),
     [],
   );
   const [renderDpr, setRenderDpr] = useState(maxDpr);
-  const [showStats, setShowStats] = useState(
-    () => localStorage.getItem("vf_editor_render_stats") === "true",
-  );
+  // Diagnóstico efímero: nunca debe reaparecer en la siguiente sesión ni convertir
+  // una prueba de rendimiento en chrome permanente para el usuario.
+  const [showStats, setShowStats] = useState(false);
   const renderStatsTarget = useRef<HTMLDivElement>(null);
   const adaptDpr = useCallback(
     ({ factor }: { factor: number }) => {
@@ -1238,7 +1259,7 @@ export function VoxelEditor({
         <mesh
           rotation={[-Math.PI / 2, 0, 0]}
           position={[0, groundY - 0.52, 0]}
-          receiveShadow={!freePlace}
+          receiveShadow={showGrid && !freePlace}
           onPointerDown={onDown}
           onPointerUp={onUpGround}
           onPointerMove={onMoveGround}
@@ -1247,20 +1268,22 @@ export function VoxelEditor({
           <meshStandardMaterial
             color={freePlace ? "#1d3346" : "#16212d"}
             transparent
-            opacity={freePlace ? 0.4 : 0.55}
+            opacity={showGrid ? (freePlace ? 0.4 : 0.55) : 0}
             depthWrite={false}
           />
         </mesh>
-        <Grid
-          position={[0, groundY - 0.51, 0]}
-          args={[WORLD_LIMIT * 2, WORLD_LIMIT * 2]}
-          cellSize={1}
-          cellColor={freePlace ? "#3a6a8a" : "#2a3a4b"}
-          sectionSize={8}
-          sectionColor={freePlace ? "#4f86ad" : "#3a5572"}
-          fadeDistance={60}
-          infiniteGrid={false}
-        />
+        {showGrid && (
+          <Grid
+            position={[0, groundY - 0.51, 0]}
+            args={[WORLD_LIMIT * 2, WORLD_LIMIT * 2]}
+            cellSize={1}
+            cellColor={freePlace ? "#3a6a8a" : "#2a3a4b"}
+            sectionSize={8}
+            sectionColor={freePlace ? "#4f86ad" : "#3a5572"}
+            fadeDistance={60}
+            infiniteGrid={false}
+          />
+        )}
 
         {/* Cotas/medidas flotantes (ancho×fondo×alto) en tiempo real. */}
         {measure && <MeasureOverlay voxels={voxels} />}
@@ -1414,9 +1437,11 @@ export function VoxelEditor({
             RIGHT: THREE.MOUSE.ROTATE,
           }}
         />
-        <GizmoHelper alignment="bottom-right" margin={[60, 60]}>
-          <GizmoViewport axisColors={["#e0653a", "#6fd089", "#5fb0e8"]} labelColor="#fff" />
-        </GizmoHelper>
+        {showGizmo && (
+          <GizmoHelper alignment="bottom-right" margin={[48, 48]}>
+            <GizmoViewport axisColors={["#e0653a", "#6fd089", "#5fb0e8"]} labelColor="#fff" />
+          </GizmoHelper>
+        )}
         {ao && (
           <EffectComposer multisampling={4}>
             <N8AO
@@ -1432,181 +1457,131 @@ export function VoxelEditor({
           </EffectComposer>
         )}
       </Canvas>
-      {/* Franja superior responsiva. Reserva el rail izquierdo y mantiene HUD + controles
-          dentro del flujo para que nunca se solapen al estrechar la ventana. */}
-      <div className="pointer-events-none absolute left-20 right-3 top-3 z-20 flex max-w-[calc(100%-5.75rem)] flex-wrap items-start justify-end gap-1.5">
+      {/* Contexto vivo: ocupa solo el espacio entre el rail y el control Vista. */}
+      <div className="pointer-events-none absolute left-20 right-24 top-3 z-20 flex min-w-0 flex-wrap items-start gap-1.5">
         {(cursorHud || freePlace) && (
-          <div className="pointer-events-none mr-auto flex max-w-full flex-wrap items-center gap-1.5">
+          <div className="flex max-w-full flex-wrap items-center gap-1.5">
             {cursorHud && (
-              <div className="max-w-full rounded-md border border-line bg-surface-2/90 px-2.5 py-1 font-mono text-[11px] tabular-nums text-ink shadow-sm backdrop-blur">
+              <div className="max-w-full truncate rounded-md border border-line bg-surface-2/95 px-2.5 py-1 font-mono text-[11px] tabular-nums text-ink shadow-sm">
                 {cursorHud}
               </div>
             )}
             {freePlace && (
-              <div className="max-w-full rounded-md border border-accent/40 bg-surface-2/95 px-3 py-1.5 text-xs text-accent-hi shadow-sm backdrop-blur">
-                Free Place · altura Y = {groundY} · usa [ y ] para cambiar
+              <div className="max-w-full truncate rounded-md border border-accent/40 bg-surface-2/95 px-2.5 py-1 text-[11px] text-accent-hi shadow-sm">
+                Flotante · Y {groundY} · [ ] ajusta
               </div>
             )}
           </div>
         )}
-        <div className="pointer-events-auto flex max-w-full flex-wrap items-center justify-end gap-1.5">
-          <div className="flex shrink-0 overflow-hidden rounded-md border border-line bg-surface-2/90 backdrop-blur">
-          {(
-            [
-              ["iso", "Iso"],
-              ["top", "Sup."],
-              ["front", "Frente"],
-            ] as ["iso" | "top" | "front", string][]
-          ).map(([p, label], i) => (
-            <button
-              key={p}
-              onClick={() => setView(p)}
-              title={`Vista ${label}`}
-              className={cn(
-                "cursor-pointer px-2.5 py-1.5 text-xs text-muted transition-colors hover:bg-elevated hover:text-ink",
-                i > 0 && "border-l border-line",
-              )}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-        <button
-          onClick={() => setMeasure((v) => !v)}
-          aria-pressed={measure}
-          title={measure ? "Ocultar medidas (ancho × fondo × alto)" : "Mostrar medidas (ancho × fondo × alto)"}
-          className={cn(
-            "cursor-pointer whitespace-nowrap rounded-md border border-line px-2.5 py-1.5 text-xs backdrop-blur transition-colors hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60",
-            measure ? "bg-accent/20 text-accent-hi" : "bg-surface-2/90 text-muted",
-          )}
+      </div>
+      <div className="absolute right-3 top-3 z-30">
+        <SceneViewPopover
+          presets={[
+            { id: "iso", label: "Isométrica", onSelect: () => setView("iso") },
+            { id: "top", label: "Superior", onSelect: () => setView("top") },
+            { id: "front", label: "Frontal", onSelect: () => setView("front") },
+          ]}
+          onReset={() => setResetKey((key) => key + 1)}
         >
-          Medidas
-        </button>
-        <button
-          onClick={() => {
-            setShowStats((value) => {
-              const next = !value;
-              try {
-                localStorage.setItem("vf_editor_render_stats", String(next));
-              } catch {
-                /* cuota llena: ignorar */
-              }
-              return next;
-            });
-          }}
-          aria-pressed={showStats}
-          title="Mostrar FPS, draw calls, triángulos, DPR y tiempo de horneado fuera del hilo"
-          className={cn(
-            "cursor-pointer whitespace-nowrap rounded-md border border-line px-2.5 py-1.5 text-xs backdrop-blur transition-colors hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60",
-            showStats ? "bg-accent/20 text-accent-hi" : "bg-surface-2/90 text-muted",
-          )}
-        >
-          Rendimiento
-        </button>
-        <button
-          onClick={() => setAo((v) => !v)}
-          aria-pressed={ao}
-          title={ao ? "Desactivar oclusión ambiental (más rendimiento)" : "Activar oclusión ambiental (más bonito)"}
-          className={cn(
-            "cursor-pointer whitespace-nowrap rounded-md border border-line px-2.5 py-1.5 text-xs backdrop-blur transition-colors hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60",
-            ao ? "bg-accent/20 text-accent-hi" : "bg-surface-2/90 text-muted",
-          )}
-        >
-          AO
-        </button>
-        <select
-          value={biomeId}
-          onChange={(e) => {
-            setBiomeId(e.target.value);
-            try {
-              localStorage.setItem("vf_editor_biome", e.target.value);
-            } catch {
-              /* cuota llena: ignorar */
-            }
-          }}
-          aria-label="Entorno / bioma de previsualización"
-          title="Entorno: planta el prefab en un suelo de bioma de Hytale"
-          className="min-w-0 max-w-40 cursor-pointer rounded-md border border-line bg-surface-2/90 px-2 py-1.5 text-xs text-ink backdrop-blur transition-colors hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
-        >
-          {BIOMES.map((b) => (
-            <option key={b.id} value={b.id}>
-              {b.name}
-            </option>
-          ))}
-        </select>
-        {biome.id !== "none" && (
-          <>
-            <select
-              value={relief}
-              onChange={(e) => {
-                setRelief(e.target.value as Relief);
-                try {
-                  localStorage.setItem("vf_editor_relief", e.target.value);
-                } catch {
-                  /* cuota llena: ignorar */
-                }
-              }}
-              aria-label="Relieve del entorno"
-              title="Relieve del terreno alrededor del prefab (el claro central siempre es plano)"
-              className="min-w-0 max-w-36 cursor-pointer rounded-md border border-line bg-surface-2/90 px-2 py-1.5 text-xs text-ink backdrop-blur transition-colors hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
-            >
-              {RELIEFS.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              aria-pressed={vegetation}
-              title="Mostrar u ocultar árboles y plantas para que no tapen la construcción"
-              onClick={() => {
-                setVegetation((value) => {
-                  const next = !value;
+          <section aria-label="Ayudas de escena" className="space-y-0.5">
+            <h3 className="mb-1 px-2 text-xs font-semibold text-ink">Ayudas de escena</h3>
+            <SceneViewToggle checked={showGrid} onChange={setShowGrid} label="Cuadrícula" />
+            <SceneViewToggle checked={showGizmo} onChange={setShowGizmo} label="Ejes de orientación" />
+            <SceneViewToggle checked={measure} onChange={setMeasure} label="Medidas del modelo" />
+          </section>
+
+          <section aria-label="Calidad visual" className="mt-3 border-t border-line pt-3">
+            <h3 className="mb-1 px-2 text-xs font-semibold text-ink">Calidad visual</h3>
+            <SceneViewToggle checked={ao} onChange={setAo} label="Oclusión ambiental y bloom" />
+          </section>
+
+          <section aria-labelledby="editor-environment" className="mt-3 border-t border-line pt-3">
+            <h3 id="editor-environment" className="mb-2 px-2 text-xs font-semibold text-ink">
+              Entorno
+            </h3>
+            <label className="block px-2 text-xs text-muted">
+              Bioma de previsualización
+              <select
+                value={biomeId}
+                onChange={(event) => {
+                  setBiomeId(event.target.value);
                   try {
-                    localStorage.setItem("vf_editor_vegetation", String(next));
+                    localStorage.setItem("vf_editor_biome", event.target.value);
                   } catch {
-                    /* cuota llena: ignorar */
+                    /* almacenamiento no disponible */
                   }
-                  return next;
-                });
-              }}
-              className={cn(
-                "cursor-pointer whitespace-nowrap rounded-md border border-line px-2.5 py-1.5 text-xs backdrop-blur transition-colors hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60",
-                vegetation ? "bg-accent/20 text-accent-hi" : "bg-surface-2/90 text-muted",
-              )}
-            >
-              Vegetación
-            </button>
-          </>
-        )}
-        <button
-          onClick={() => setResetKey((k) => k + 1)}
-          className="cursor-pointer whitespace-nowrap rounded-md border border-line bg-surface-2/90 px-3 py-1.5 text-xs text-ink backdrop-blur transition-colors hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
-        >
-          Reiniciar vista
-        </button>
-        </div>
+                }}
+                className="mt-1 min-h-10 w-full cursor-pointer rounded-md border border-line bg-surface-2 px-2 text-sm text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+              >
+                {BIOMES.map((item) => (
+                  <option key={item.id} value={item.id}>{item.name}</option>
+                ))}
+              </select>
+            </label>
+            {biome.id !== "none" && (
+              <>
+                <label className="mt-2 block px-2 text-xs text-muted">
+                  Relieve
+                  <select
+                    value={relief}
+                    onChange={(event) => {
+                      setRelief(event.target.value as Relief);
+                      try {
+                        localStorage.setItem("vf_editor_relief", event.target.value);
+                      } catch {
+                        /* almacenamiento no disponible */
+                      }
+                    }}
+                    className="mt-1 min-h-10 w-full cursor-pointer rounded-md border border-line bg-surface-2 px-2 text-sm text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+                  >
+                    {RELIEFS.map((item) => (
+                      <option key={item.id} value={item.id}>{item.name}</option>
+                    ))}
+                  </select>
+                </label>
+                <div className="mt-1">
+                  <SceneViewToggle
+                    checked={vegetation}
+                    onChange={(next) => {
+                      setVegetation(next);
+                      try {
+                        localStorage.setItem("vf_editor_vegetation", String(next));
+                      } catch {
+                        /* almacenamiento no disponible */
+                      }
+                    }}
+                    label="Vegetación alrededor"
+                    description="Ocúltala si tapa la construcción"
+                  />
+                </div>
+              </>
+            )}
+          </section>
+
+          <section aria-label="Diagnóstico" className="mt-3 border-t border-line pt-3">
+            <SceneViewToggle
+              checked={showStats}
+              onChange={setShowStats}
+              label="Diagnóstico de rendimiento"
+              description="Solo durante esta sesión"
+            />
+          </section>
+        </SceneViewPopover>
       </div>
       {/* Aviso cuando la previsualización de arrastre supera el tope de instancias. */}
       {preview && preview.cells.length > 4096 && (
         <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-md border border-gold/40 bg-surface-2/90 px-3 py-1.5 text-xs text-gold backdrop-blur">
-          {preview.cells.length.toLocaleString("es")} celdas · se previsualizan 4096 (se aplicarán todas)
+          Previsualización simplificada · suelta para validar y aplicar la operación completa
         </div>
       )}
       {showStats && (
         <div
           ref={renderStatsTarget}
-          className="pointer-events-none absolute bottom-12 left-20 z-30 max-w-[calc(100%-5.75rem)] rounded-md border border-line bg-surface-2/95 px-2.5 py-1.5 font-mono text-[10px] tabular-nums text-ink shadow backdrop-blur"
+          className="pointer-events-none absolute bottom-3 left-20 z-30 max-w-[calc(100%-10rem)] truncate rounded-md border border-line bg-surface-2/95 px-2.5 py-1.5 font-mono text-[10px] tabular-nums text-ink shadow-sm"
         >
           Midiendo el render…
         </div>
       )}
-      {/* Hint permanente del esquema de control (izquierdo construye, derecho orbita). */}
-      <div className="pointer-events-none absolute bottom-3 left-20 max-w-[calc(100%-5.75rem)] rounded-md border border-line bg-surface-2/90 px-2.5 py-1 text-[11px] text-muted backdrop-blur">
-        <span className="text-ink">Izquierdo</span> construye con precisión ·{" "}
-        <span className="text-ink">Derecho</span> orbita · <span className="text-ink">Espacio</span> mueve
-      </div>
     </div>
   );
 }

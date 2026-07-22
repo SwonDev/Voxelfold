@@ -110,7 +110,7 @@ export function Import() {
   });
 
   return (
-    <div className="mx-auto w-full max-w-[1600px] px-8 py-8">
+    <div className="mx-auto w-full max-w-[1600px] px-4 py-5 sm:px-6 sm:py-6 xl:px-8 xl:py-8">
       <PageHeader
         title="Importar de Hytale"
         subtitle="Convierte cualquier prefab en una guía construible por fases. Elige la fuente:"

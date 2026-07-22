@@ -1,5 +1,5 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { HelpCircle, FlipVertical2 } from "lucide-react";
+import { FlipVertical2 } from "lucide-react";
 import {
   Link,
   useBeforeUnload,
@@ -27,13 +27,14 @@ import {
 import { SlotIcon } from "@/components/BlockIcon";
 import { BlockBrowser } from "@/components/BlockBrowser";
 import { LayerBlueprint } from "@/components/LayerBlueprint";
-import { EditorToolPalette, TOOL_LABELS } from "@/components/EditorToolPalette";
+import { EditorToolPalette } from "@/components/EditorToolPalette";
 import { HyIcon } from "@/components/HyIcon";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Modal } from "@/components/ui/Modal";
 import { ResizableSidebar } from "@/components/ui/ResizableSidebar";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import { Menu, MenuItem } from "@/components/ui/Menu";
 import { useCatalogMap } from "@/lib/useCatalog";
 import { isMarkerName, parseBlockName } from "@/lib/resolveBlock";
 import { phaseColor } from "@/lib/phaseColors";
@@ -154,6 +155,11 @@ export function Editor() {
   const [helpOpen, setHelpOpen] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
   const [sidePanel, setSidePanel] = useState<"blocks" | "scene">("blocks");
+  useEffect(() => {
+    if (["line", "rect", "fill", "brush", "select", "paste"].includes(tool)) {
+      setSidePanel("scene");
+    }
+  }, [tool]);
   // Opciones de las herramientas de forma (Fase 2).
   const [rectFilled, setRectFilled] = useState(false);
   const [rectHollow, setRectHollow] = useState(false);
@@ -644,7 +650,7 @@ export function Editor() {
   return (
     <div className="flex h-full flex-col">
       <header className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line px-4 py-3 xl:px-6">
-        <div className="flex min-w-[12rem] flex-1 items-center gap-3">
+        <div className="flex min-w-[12rem] flex-1 flex-wrap items-center gap-x-3 gap-y-1">
           <Link
             to={`/build/${buildId}`}
             className="inline-flex items-center gap-1 rounded text-sm text-muted hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
@@ -652,27 +658,20 @@ export function Editor() {
             <HyIcon name="back" size={16} /> Ficha
           </Link>
           <span className="truncate text-ink">Editor 3D · {detail.data?.build.name ?? ""}</span>
-          <span className="shrink-0 text-xs text-muted">· {list.length} bloques</span>
+          <span className="shrink-0 text-xs text-muted">{list.length} bloques</span>
           {loaded && (
             <span
-              className={cn(
-                "shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium",
-                dirty
-                  ? "border-gold/50 bg-gold/10 text-gold"
-                  : "border-accent/30 bg-accent/10 text-accent-hi",
-              )}
+              className={cn("flex shrink-0 items-center gap-1.5 text-xs font-medium", dirty ? "text-gold" : "text-accent-hi")}
               role="status"
               aria-live="polite"
             >
-              {dirty ? "● Sin guardar" : "✓ Guardado"}
+              <span
+                aria-hidden
+                className={cn("h-1.5 w-1.5 rounded-full", dirty ? "bg-gold" : "bg-accent-hi")}
+              />
+              {dirty ? "Sin guardar" : "Guardado"}
             </span>
           )}
-          <span
-            className="shrink-0 rounded-full border border-accent/40 bg-accent/15 px-2 py-0.5 text-xs font-medium text-accent-hi"
-            title="Herramienta activa"
-          >
-            {TOOL_LABELS[tool] ?? tool}
-          </span>
         </div>
         <div className="ml-auto flex max-w-full flex-wrap items-center justify-end gap-1.5">
           {/* Historial */}
@@ -683,17 +682,15 @@ export function Editor() {
             <HyIcon name="redo" size={16} />
           </Button>
           <div className="mx-1 h-5 w-px bg-line" aria-hidden />
-          {/* Modelo */}
-          <Button variant="secondary" size="icon" onClick={() => setConfirmClear(true)} disabled={list.length === 0} aria-label="Vaciar el modelo" title="Vaciar el modelo">
-            <HyIcon name="trash" size={16} />
-          </Button>
-          <Button variant="secondary" size="icon" onClick={() => setPlanOpen(true)} disabled={list.length === 0} aria-label="Plano por capas" title="Plano por capas con medidas y recuento">
-            <HyIcon name="layers" size={16} />
-          </Button>
-          <Button variant="secondary" size="icon" onClick={() => setHelpOpen(true)} aria-label="Atajos y controles" title="Atajos de teclado y controles">
-            <HelpCircle size={16} aria-hidden />
-          </Button>
-          <div className="mx-1 h-5 w-px bg-line" aria-hidden />
+          <Menu label="Más" icon="settings">
+            <MenuItem icon="layers" disabled={list.length === 0} onClick={() => setPlanOpen(true)}>
+              Plano por capas
+            </MenuItem>
+            <MenuItem onClick={() => setHelpOpen(true)}>Atajos y controles</MenuItem>
+            <MenuItem icon="trash" danger disabled={list.length === 0} onClick={() => setConfirmClear(true)}>
+              Vaciar el modelo
+            </MenuItem>
+          </Menu>
           {/* Acción primaria */}
           <Button
             onClick={() => saveActionRef.current()}
@@ -722,7 +719,7 @@ export function Editor() {
           <div className="relative h-full min-h-[320px] bg-bg">
           {/* Rail de herramientas flotante (siempre visible sobre el lienzo) */}
           {loaded && (
-            <div className="absolute left-3 top-3 z-10 max-h-[calc(100%-1.5rem)] overflow-y-auto">
+            <div className="absolute left-3 top-3 z-30">
               <EditorToolPalette tool={tool} setTool={setTool} orientation="rail" canPaste={!!clipboard} />
             </div>
           )}
@@ -986,10 +983,15 @@ export function Editor() {
                     type="number"
                     min={1}
                     max={21}
+                    step={2}
                     value={brushSize}
-                    onChange={(e) => setBrushSize(Math.max(1, Math.min(21, Number(e.target.value) || 1)))}
+                    onChange={(event) => {
+                      const requested = Math.max(1, Math.min(21, Math.floor(Number(event.target.value) || 1)));
+                      setBrushSize(requested % 2 === 0 ? Math.min(21, requested + 1) : requested);
+                    }}
                     className="w-16 rounded border border-line bg-surface px-1.5 py-0.5 text-ink focus:outline-none focus-visible:ring-1 focus-visible:ring-accent/60"
                   />
+                  <span className="text-[10px]">diámetro impar</span>
                 </label>
               </div>
             )}
@@ -1360,9 +1362,9 @@ export function Editor() {
                     ["V", "Pegar (Seleccionar va en el rail; sin atajo para no chocar con WASD)"],
                   ]],
                   ["Construir", [
-                    ["Clic izquierdo", "Coloca pegado a la cara o el suelo que apuntas"],
-                    ["Arrastrar izquierdo", "Coloca/borra en serie (bloques contiguos)"],
-                    ["⇧ + clic/arrastrar", "Borra"],
+                    ["Clic izquierdo", "Coloca un bloque con precisión en la cara o el suelo"],
+                    ["Pintar + arrastrar", "Construye un trazo continuo"],
+                    ["⇧ + clic/arrastrar", "Borra con la herramienta activa"],
                     ["R · ⇧R · ⌥R", "Girar · inclinar · alabeo (los tres ejes oficiales)"],
                   ]],
                   ["Edición", [
@@ -1379,7 +1381,7 @@ export function Editor() {
                     ["Botón DERECHO", "Girar la vista (orbitar)"],
                     ["Espacio + arrastrar", "Mover la vista (pan)"],
                     ["W A S D · Q/E · Rueda", "Desplazar · bajar/subir · zoom"],
-                    ["Iso · Sup. · Frente", "Vistas predefinidas (arriba a la derecha)"],
+                    ["Vista", "Vistas predefinidas, cuadrícula, medidas, entorno y calidad"],
                   ]],
                   ["Capas", [
                     ["[ · ]", "Bajar / subir la altura de construcción"],

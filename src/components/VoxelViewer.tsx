@@ -23,6 +23,7 @@ import { VoxelInstances } from "@/components/VoxelInstances";
 import { ShadowScheduler } from "@/components/RenderPerformance";
 import { useVoxelRenderBake } from "@/lib/useVoxelRenderBake";
 import type { BakeGroup } from "@/lib/voxelBakeProtocol";
+import { SceneViewPopover } from "@/components/SceneViewPopover";
 
 type Center = [number, number, number];
 type Kind = "solid" | "highlight" | "ghost";
@@ -703,76 +704,68 @@ export function VoxelViewer({
           )}
         </div>
       )}
-      <div className="absolute right-3 top-3 flex items-center gap-2">
-        {!isObjectPreview && <select
-          value={biomeId}
-          onChange={(e) => {
-            setBiomeId(e.target.value);
-            try {
-              localStorage.setItem("vf_viewer_biome", e.target.value);
-            } catch {
-              /* cuota llena: ignorar */
-            }
-          }}
-          aria-label="Entorno / bioma de previsualización"
-          title="Entorno: muestra el prefab plantado en un bioma de Hytale"
-          className="cursor-pointer rounded-md border border-line bg-surface-2/90 px-2 py-1.5 text-xs text-ink backdrop-blur transition-colors hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+      <div className="absolute right-3 top-3 z-30">
+        <SceneViewPopover
+          presets={([
+            ["iso", "Isométrica"],
+            ["top", "Superior"],
+            ["front", "Frontal"],
+            ["side", "Lateral"],
+          ] as const).map(([preset, label]) => ({
+            id: preset,
+            label,
+            onSelect: () => setCameraView(preset),
+          }))}
+          onReset={resetView}
         >
-          {BIOMES.map((b) => (
-            <option key={b.id} value={b.id}>
-              {b.name}
-            </option>
-          ))}
-        </select>}
-        {!isObjectPreview && biome.id !== "none" && (
-          <select
-            value={relief}
-            onChange={(e) => {
-              setRelief(e.target.value as Relief);
-              try {
-                localStorage.setItem("vf_viewer_relief", e.target.value);
-              } catch {
-                /* cuota llena: ignorar */
-              }
-            }}
-            aria-label="Relieve del entorno"
-            title="Relieve del terreno alrededor del prefab (el claro central siempre es plano)"
-            className="cursor-pointer rounded-md border border-line bg-surface-2/90 px-2 py-1.5 text-xs text-ink backdrop-blur transition-colors hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
-          >
-            {RELIEFS.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name}
-              </option>
-            ))}
-          </select>
-        )}
-        <button
-          onClick={resetView}
-          className="rounded-md border border-line bg-surface-2/90 px-3 py-1.5 text-xs text-ink backdrop-blur transition-colors hover:bg-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
-        >
-          Reiniciar vista
-        </button>
-      </div>
-      <div
-        className="absolute bottom-3 left-3 flex items-center gap-1 rounded-md border border-line bg-surface-2/90 p-1 shadow backdrop-blur"
-        role="group"
-        aria-label="Vistas rápidas de cámara"
-      >
-        {([
-          ["iso", "Iso"],
-          ["top", "Superior"],
-          ["front", "Frente"],
-          ["side", "Lateral"],
-        ] as const).map(([preset, label]) => (
-          <button
-            key={preset}
-            type="button"
-            onClick={() => setCameraView(preset)}
-            className="min-h-8 rounded px-2 text-[11px] text-muted transition-colors hover:bg-elevated hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
-          >
-            {label}
-          </button>
-        ))}
+          {!isObjectPreview && (
+            <section aria-labelledby="viewer-environment">
+              <h3 id="viewer-environment" className="mb-2 px-2 text-xs font-semibold text-ink">
+                Entorno
+              </h3>
+              <label className="block px-2 text-xs text-muted">
+                Bioma de previsualización
+                <select
+                  value={biomeId}
+                  onChange={(event) => {
+                    setBiomeId(event.target.value);
+                    try {
+                      localStorage.setItem("vf_viewer_biome", event.target.value);
+                    } catch {
+                      /* almacenamiento no disponible */
+                    }
+                  }}
+                  className="mt-1 min-h-10 w-full cursor-pointer rounded-md border border-line bg-surface-2 px-2 text-sm text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+                >
+                  {BIOMES.map((item) => (
+                    <option key={item.id} value={item.id}>{item.name}</option>
+                  ))}
+                </select>
+              </label>
+              {biome.id !== "none" && (
+                <label className="mt-2 block px-2 text-xs text-muted">
+                  Relieve
+                  <select
+                    value={relief}
+                    onChange={(event) => {
+                      setRelief(event.target.value as Relief);
+                      try {
+                        localStorage.setItem("vf_viewer_relief", event.target.value);
+                      } catch {
+                        /* almacenamiento no disponible */
+                      }
+                    }}
+                    className="mt-1 min-h-10 w-full cursor-pointer rounded-md border border-line bg-surface-2 px-2 text-sm text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+                  >
+                    {RELIEFS.map((item) => (
+                      <option key={item.id} value={item.id}>{item.name}</option>
+                    ))}
+                  </select>
+                </label>
+              )}
+            </section>
+          )}
+        </SceneViewPopover>
       </div>
     </div>
   );

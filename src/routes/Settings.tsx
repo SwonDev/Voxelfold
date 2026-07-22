@@ -90,7 +90,7 @@ export function Settings() {
   });
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-8 py-8">
+    <div className="mx-auto w-full max-w-3xl px-4 py-5 sm:px-6 sm:py-6 xl:px-8 xl:py-8">
       <PageHeader title="Ajustes" subtitle="Conexión con Hytale, biblioteca, comunidad e idioma." />
 
       <Card className="overflow-hidden">

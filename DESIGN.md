@@ -62,9 +62,9 @@ Las fuentes empaquetadas tienen licencia SIL OFL y sus avisos se conservan en `p
 
 ## Layout
 
-La aplicación prioriza el lienzo 3D. Las herramientas permanecen cerca del borde, los paneles laterales son redimensionables y la información contextual no debe tapar la construcción. La unidad de espaciado es 4 px; los controles compactos parten de 8 px y los paneles de 16 px.
+La aplicación prioriza el lienzo 3D. Las herramientas esenciales permanecen cerca del borde; las herramientas avanzadas, vistas, entornos y diagnósticos se agrupan bajo demanda. Los paneles laterales son redimensionables y la información contextual solo aparece mientras aporta una decisión, sin tapar la construcción. La unidad de espaciado es 4 px; los controles compactos parten de 8 px y los paneles de 16 px.
 
-La densidad puede ser alta, pero cada grupo funcional necesita separación visible. Los estados vacío, carga, error y sincronización conservan la misma estructura para evitar saltos.
+La densidad puede ser alta, pero cada grupo funcional necesita separación visible. Ninguna ayuda introductoria ni métrica de desarrollo permanece sobre el lienzo por defecto. Los estados vacío, carga, error y sincronización conservan la misma estructura para evitar saltos.
 
 ## Elevation & Depth
 
@@ -86,7 +86,7 @@ El símbolo de Voxelfold representa dos planos voxel plegados que forman una V i
 - Foco: anillo `accent-hi` de al menos 2 px, visible en todos los fondos.
 - Iconos funcionales: Lucide o iconos locales de Hytale cuando el concepto pertenece al juego; no usar emojis.
 - Bloques y materiales: mostrar siempre el icono o textura oficial resuelta desde la instalación local, con un fallback explícito de error y nunca con una imitación inventada.
-- Métricas 3D: Noto Mono, fondo `surface-2`, borde `line`; deben mantenerse legibles sin cubrir la escena.
+- Métricas 3D: Noto Mono, fondo `surface-2`, borde `line`; son un diagnóstico efímero activado por el usuario, no se persisten entre sesiones y deben mantenerse legibles sin cubrir la escena.
 - Marca: `public/brand/voxelfold-icon.png` es la fuente web y `src-tauri/icons` contiene sus derivados nativos.
 
 ## Do's and Don'ts

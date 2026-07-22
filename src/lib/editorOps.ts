@@ -29,7 +29,14 @@ export function lineCells(a: Cell, b: Cell): Cell[] {
 
 /** Caja entre dos esquinas, extruida `height` capas. `filled`=maciza; si no, solo las paredes
  *  (contorno); con `closed`=true se añaden suelo y techo → caja HUECA/cáscara (como `//hollow`). */
-export function rectCells(a: Cell, b: Cell, filled: boolean, height: number, closed = false): Cell[] {
+export function rectCells(
+  a: Cell,
+  b: Cell,
+  filled: boolean,
+  height: number,
+  closed = false,
+  limit = Number.POSITIVE_INFINITY,
+): Cell[] {
   const x0 = Math.min(a.x, b.x), x1 = Math.max(a.x, b.x);
   const z0 = Math.min(a.z, b.z), z1 = Math.max(a.z, b.z);
   const y0 = a.y;
@@ -40,7 +47,10 @@ export function rectCells(a: Cell, b: Cell, filled: boolean, height: number, clo
       for (let z = z0; z <= z1; z++) {
         const edge = x === x0 || x === x1 || z === z0 || z === z1;
         const cap = closed && (y === y0 || y === y0 + h - 1);
-        if (filled || edge || cap) cells.push({ x, y, z });
+        if (filled || edge || cap) {
+          cells.push({ x, y, z });
+          if (cells.length >= limit) return cells;
+        }
       }
   return cells;
 }
@@ -56,6 +66,10 @@ export function fillCells(
   bounds: { minX: number; maxX: number; minZ: number; maxZ: number },
   limit = 4096,
 ): Cell[] {
+  if (
+    start.x < bounds.minX || start.x > bounds.maxX ||
+    start.z < bounds.minZ || start.z > bounds.maxZ
+  ) return [];
   if (occupied(start.x, start.z)) return [];
   const y = start.y;
   const out: Cell[] = [];
@@ -87,7 +101,11 @@ export function brushCells(
   size: number,
   hollow = false,
 ): Cell[] {
-  const r = Math.max(0, Math.floor((Math.max(1, size) - 1) / 2));
+  // Una brocha centrada en una celda solo puede tener diámetro impar. Los valores pares
+  // se redondean hacia arriba (2→3, 4→5) en vez de producir una brocha menor a la indicada.
+  const requested = Math.max(1, Math.floor(size));
+  const diameter = requested % 2 === 0 ? requested + 1 : requested;
+  const r = (diameter - 1) / 2;
   const cells: Cell[] = [];
   const rr = (r + 0.5) * (r + 0.5);
   const ir = (r - 0.5) * (r - 0.5); // radio² interior (para el hueco)

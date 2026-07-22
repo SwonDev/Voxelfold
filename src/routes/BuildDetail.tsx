@@ -283,7 +283,7 @@ export function BuildDetail() {
 
   if (isLoading)
     return (
-      <div className="mx-auto w-full max-w-[1400px] px-8 py-8">
+      <div className="mx-auto w-full max-w-[1400px] px-4 py-5 sm:px-6 sm:py-6 xl:px-8 xl:py-8">
         <Skeleton className="mb-4 h-4 w-24" />
         <div className="mb-6 flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1 space-y-2">
@@ -304,7 +304,7 @@ export function BuildDetail() {
     );
   if (error || !data)
     return (
-      <div className="mx-auto w-full max-w-[1400px] px-8 py-8">
+      <div className="mx-auto w-full max-w-[1400px] px-4 py-5 sm:px-6 sm:py-6 xl:px-8 xl:py-8">
         <Link to="/" className="mb-4 inline-flex items-center gap-2 text-sm text-muted hover:text-ink">
           <HyIcon name="back" size={16} /> Volver
         </Link>
@@ -316,7 +316,7 @@ export function BuildDetail() {
   const hasVoxels = Boolean(build.voxel_model_ref);
 
   return (
-    <div className="mx-auto w-full max-w-[1400px] px-8 py-8">
+    <div className="mx-auto w-full max-w-[1400px] px-4 py-5 sm:px-6 sm:py-6 xl:px-8 xl:py-8">
       <Link
         to="/"
         className="mb-4 inline-flex items-center gap-2 rounded text-sm text-muted hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
