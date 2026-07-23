@@ -1,35 +1,33 @@
 version: 2
 updates:
+  # Las versiones rutinarias se revisan en lotes controlados. Dependabot sigue
+  # abriendo actualizaciones de seguridad y las agrupa por ecosistema.
   - package-ecosystem: npm
     directory: /
     schedule:
       interval: weekly
+    open-pull-requests-limit: 0
     groups:
-      frontend:
+      frontend-security:
+        applies-to: security-updates
         patterns: ["*"]
-        update-types: ["minor", "patch"]
-    ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
+
   - package-ecosystem: cargo
     directory: /src-tauri
     schedule:
       interval: weekly
+    open-pull-requests-limit: 0
     groups:
-      rust:
+      rust-security:
+        applies-to: security-updates
         patterns: ["*"]
-        update-types: ["minor", "patch"]
-    ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
+
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    open-pull-requests-limit: 0
     groups:
-      actions:
+      actions-security:
+        applies-to: security-updates
         patterns: ["*"]
-        update-types: ["minor", "patch"]
-    ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
