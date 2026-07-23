@@ -3,22 +3,77 @@ name: Vigilar Hytale Shared Source
 on:
   workflow_dispatch:
   schedule:
-    - cron: "17 */6 * * *"
+    # Una comprobación diaria basta para detectar cambios sin generar ruido.
+    - cron: "17 7 * * *"
+
+concurrency:
+  group: hytale-source-watch
+  cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
   compatibility-revision:
+    name: Comparar revisión compatible
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      HYTALE_SHARED_SOURCE_TOKEN: ${{ secrets.HYTALE_SHARED_SOURCE_TOKEN }}
     steps:
+      - name: Comprobar acceso al repositorio privado
+        id: source-access
+        shell: bash
+        run: |
+          if [[ -z "${HYTALE_SHARED_SOURCE_TOKEN}" ]]; then
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "### Vigilancia omitida"
+              echo
+              echo 'El secreto `HYTALE_SHARED_SOURCE_TOKEN` no está configurado.'
+              echo "La ejecución termina correctamente para evitar avisos repetidos."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          echo "available=true" >> "$GITHUB_OUTPUT"
+
       - name: Descargar Voxelfold
+        if: steps.source-access.outputs.available == 'true'
         uses: actions/checkout@v7
 
       - name: Comparar con la revisión compatible
+        if: steps.source-access.outputs.available == 'true'
         shell: bash
         env:
-          GH_TOKEN: ${{ secrets.HYTALE_SHARED_SOURCE_TOKEN }}
+          GH_TOKEN: ${{ env.HYTALE_SHARED_SOURCE_TOKEN }}
         run: |
           revision="$(gh api repos/SwonDev/hytale-shared-source/git/ref/heads/pre-release --jq .object.sha)"
-          node scripts/check-hytale-source.mjs --remote-revision="$revision"
+
+          set +e
+          result="$(node scripts/check-hytale-source.mjs --remote-revision="$revision" 2>&1)"
+          status=$?
+          set -e
+
+          printf '%s\n' "$result"
+          if [[ $status -eq 0 ]]; then
+            {
+              echo "### Hytale Shared Source está al día"
+              echo
+              echo "Revisión: \`${revision:0:12}\`"
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          if [[ $status -eq 2 ]]; then
+            {
+              echo "### Hay una revisión nueva pendiente de integrar"
+              echo
+              echo "Revisión remota: \`${revision:0:12}\`"
+              echo
+              echo "La vigilancia la ha detectado sin convertir una actualización pendiente en un fallo recurrente."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          exit "$status"
